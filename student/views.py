@@ -73,7 +73,7 @@ class SnippetList(APIView):
         return Response(serializer.data)
 
 
-class ExampleView(APIView):
+class AuthApiView(APIView):
     authentication_classes = (SessionAuthentication, BasicAuthentication)
     permission_classes = (IsAuthenticated,)
 
@@ -84,7 +84,7 @@ class ExampleView(APIView):
         }
         return Response(content)
 
-class AuthStudentActions(ExampleView):
+class AuthStudentActions(AuthApiView):
     """
     Retrieve, update or delete a snippet instance.
     """
