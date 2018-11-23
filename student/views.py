@@ -15,6 +15,8 @@ from rest_framework.decorators import api_view
 
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 from rest_framework.permissions import IsAuthenticated
+from rest_framework import permissions
+from student.permissions import IsOwnerOrReadOnly, TokenAuthentication
 from rest_framework import status
 
 # Create your views here.
@@ -63,14 +65,24 @@ def student_detail(request, pk):
         student.delete()
         return HttpResponse(status=204)
 
-class SnippetList(APIView):
+class StudentList(APIView):
     """
-    List all snippets
+    List all student
     """
     def get(self, request, format=None):
         students = Student.objects.all()
         serializer = StudentSerializer(students, many=True)
         return Response(serializer.data)
+
+    def post(self, request, format=None):
+        permission_classes = (permissions.IsAuthenticatedOrReadOnly,
+                      IsOwnerOrReadOnly,TokenAuthentication,)
+        print ('already come here....... %s', permission_classes)
+        serializer = StudentSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class AuthApiView(APIView):
@@ -112,9 +124,4 @@ class AuthStudentActions(AuthApiView):
         student.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    def post(self, request, format=None):
-        serializer = StudentSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)        
+            

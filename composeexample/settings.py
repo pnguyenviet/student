@@ -11,19 +11,43 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 """
 
 import os
+import sys
+from django.core.exceptions import ImproperlyConfigured
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+# Handling Key Import Errors
+def get_env_variable(var_name):
+    """ Get the environment variable or return exception """
+    try:
+        return os.environ[var_name]
+    except KeyError:
+        error_msg = "Set the %s environment variable" % var_name
+        raise ImproperlyConfigured(error_msg)
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '8ojt)r@$b)c398)$=@9dlkg2rvhnh89hbco)&0r5k_1+q7229y'
+# SECRET_KEY = '8ojt)r@$b)c398)$=@9dlkg2rvhnh89hbco)&0r5k_1+q7229y'
+SECRET_KEY = get_env_variable('SECRET_KEY')
+
+ENV_ROLE = get_env_variable('ENV_ROLE')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# DEBUG = True
+DEBUG = False
+TEMPLATE_DEBUG = DEBUG
+if ENV_ROLE == 'development':
+    DEBUG = True
+    HOST = '127.0.0.1'
+    DB_PASS = get_env_variable('MYSQL_PASSWORD')
+    # TEMPLATE_DEBUG = DEBUG
+else:
+    # DEBUG = False
+    HOST = 'db'
+    DB_PASS = get_env_variable('MYSQL_PASSWORD')
 
 ALLOWED_HOSTS = ['*']
 
@@ -79,10 +103,11 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'student',
-        'USER': 'root',
-        'PASSWORD': 'example',
+        'USER': 'studentdbuser',
+        'PASSWORD': DB_PASS,
         # 'HOST': '127.0.0.1',
-        'HOST': 'db',
+        # 'HOST': 'db',
+        'HOST': HOST,
         'PORT': '3306',
     }
 }
@@ -125,3 +150,14 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
 
 STATIC_URL = '/static/'
+
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_jwt.authentication.JSONWebTokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
+    ),
+}
